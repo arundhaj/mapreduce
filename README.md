@@ -11,3 +11,7 @@ MapReduce programs
  $ bin\hadoop jar mapreduce-1.0.4.jar com.arundhaj.mapreduce.NumberCount /input /output
 ```
 	
+* Mark all prime numbers
+```
+ $ bin\hadoop jar mapreduce-1.0.4.jar com.arundhaj.mapreduce.PrimeNumber /input /output
+```
