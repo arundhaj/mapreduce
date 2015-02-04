@@ -13,51 +13,69 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
-
-public class NumberCount {
-	public static class TokenizeMapper 
+public class PrimeNumber {
+	
+	public static class TokenizeMaper 
 			extends Mapper<Object, Text, Text, IntWritable> {
+		private Text number = new Text();
+		
 		private final static IntWritable one = new IntWritable(1);
-		private Text word = new Text();
 		
 		@Override
-		public void map(Object key, Text value, Context context)
+		protected void map(Object key, Text value,
+				Mapper<Object, Text, Text, IntWritable>.Context context)
 				throws IOException, InterruptedException {
 			StringTokenizer itr = new StringTokenizer(value.toString());
-			while(itr.hasMoreTokens()) {
-				word.set(itr.nextToken());
-				context.write(word, one);
+			while (itr.hasMoreTokens()) {
+				number.set(itr.nextToken());
+				context.write(number, one);
 			}
 		}
+
 	}
 	
-	public static class IntSumReduce
+	public static class PrimeReducer
 			extends Reducer<Text, IntWritable, Text, IntWritable> {
-		private IntWritable result = new IntWritable();
+		
+		private IntWritable output = new IntWritable();
+		private String strNumber = "";
+		private int number = 0;
+		private boolean isPrime = true;
 		
 		@Override
 		protected void reduce(Text key, Iterable<IntWritable> values,
 				Reducer<Text, IntWritable, Text, IntWritable>.Context context)
 				throws IOException, InterruptedException {
-			int sum = 0;
-			for(IntWritable value: values) {
-				sum += value.get();
+
+			isPrime = true;
+			strNumber = key.toString();
+			number = Integer.parseInt(strNumber);
+			
+			// Find if the number is prime or not
+			for (int i = 2; i <= number/2; i++) {
+				if(number % i == 0) {
+					isPrime = false;
+					break;
+				}
 			}
-			result.set(sum);
-			context.write(key, result);
+			
+			output.set(isPrime ? 1 : 0);
+			context.write(key, output);
 		}
+		
 	}
-	
-	public static void main(String[] args) throws Exception {
+
+	public static void main(String[] args) 
+			throws Exception {
 		Configuration conf = new Configuration();
 		
-		Job job = Job.getInstance(conf, "Number Count");
-
-		job.setJarByClass(NumberCount.class);
-		job.setMapperClass(NumberCount.TokenizeMapper.class);
-		job.setCombinerClass(NumberCount.IntSumReduce.class);
-		job.setReducerClass(NumberCount.IntSumReduce.class);
+		Job job = Job.getInstance(conf, "Prime Number");
+		job.setJarByClass(PrimeNumber.class);
 		
+		job.setMapperClass(PrimeNumber.TokenizeMaper.class);
+		job.setCombinerClass(PrimeNumber.PrimeReducer.class);
+		job.setReducerClass(PrimeNumber.PrimeReducer.class);
+
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(IntWritable.class);
 		
